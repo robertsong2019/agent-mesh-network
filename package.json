@@ -1,0 +1,57 @@
+{
+  "name": "agent-mesh-network",
+  "version": "0.1.0",
+  "description": "Decentralized AI Agent collaboration network using libp2p",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "mesh": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli/index.js",
+    "dev": "ts-node src/cli/index.ts",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "dashboard": "node dashboard/server.js"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "p2p",
+    "libp2p",
+    "mesh-network",
+    "decentralized",
+    "distributed-systems",
+    "gossip-protocol",
+    "dht"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@chainsafe/libp2p-gossipsub": "^7.0.0",
+    "@chainsafe/libp2p-noise": "^10.0.0",
+    "@chainsafe/libp2p-yamux": "^5.0.0",
+    "@libp2p/kad-dht": "^4.0.0",
+    "@libp2p/identify": "^1.0.0",
+    "@libp2p/websockets": "^6.0.0",
+    "libp2p": "^1.0.0",
+    "multiformats": "^13.0.0",
+    "tweetnacl": "^1.0.3",
+    "yargs": "^17.7.2",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@types/yargs": "^17.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
