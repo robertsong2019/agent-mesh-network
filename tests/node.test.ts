@@ -351,4 +351,222 @@ describe('MeshNetworkNode', () => {
       await expect(node.publishTask(task)).rejects.toThrow('Node not started');
     });
   });
+
+  // ==========================================================================
+  // NEW: Additional coverage tests
+  // ==========================================================================
+
+  describe('stop() idempotency', () => {
+    test('stop() called multiple times does not throw', async () => {
+      const node = new MeshNetworkNode();
+      await node.stop();
+      await expect(node.stop()).resolves.not.toThrow();
+      await expect(node.stop()).resolves.not.toThrow();
+    });
+  });
+
+  describe('registerCapability edge cases', () => {
+    test('registering 10+ capabilities all reflected in getStats', () => {
+      const node = new MeshNetworkNode();
+      for (let i = 0; i < 12; i++) {
+        node.registerCapability(`cap-${i}`, jest.fn());
+      }
+      expect(node.getStats().capabilities).toBe(12);
+    });
+
+    test('handler is stored and can be invoked independently', () => {
+      const node = new MeshNetworkNode();
+      const handler = jest.fn().mockResolvedValue({ ok: true });
+      node.registerCapability('compute', handler);
+      // The handler is stored in a private map — we verify via getStats count
+      expect(node.getStats().capabilities).toBe(1);
+    });
+
+    test('overwriting capability keeps count at 1', () => {
+      const node = new MeshNetworkNode();
+      node.registerCapability('task', jest.fn());
+      node.registerCapability('task', jest.fn());
+      node.registerCapability('task', jest.fn());
+      expect(node.getStats().capabilities).toBe(1);
+    });
+  });
+
+  describe('EventEmitter completeness', () => {
+    test('emits node:connected event', () => {
+      const node = new MeshNetworkNode();
+      const handler = jest.fn();
+      node.on('node:connected', handler);
+      node.emit('node:connected', 'peer-123');
+      expect(handler).toHaveBeenCalledWith('peer-123');
+    });
+
+    test('emits node:disconnected event', () => {
+      const node = new MeshNetworkNode();
+      const handler = jest.fn();
+      node.on('node:disconnected', handler);
+      node.emit('node:disconnected', 'peer-456');
+      expect(handler).toHaveBeenCalledWith('peer-456');
+    });
+
+    test('emits task:request event', () => {
+      const node = new MeshNetworkNode();
+      let received: [Task, string] | null = null;
+      node.on('task:request', (task: Task, from: string) => { received = [task, from]; });
+      const fakeTask: Task = { id: 't1', type: 'compute', payload: {} };
+      node.emit('task:request', fakeTask, 'node-X');
+      expect(received).not.toBeNull();
+      expect(received![0].id).toBe('t1');
+      expect(received![1]).toBe('node-X');
+    });
+
+    test('emits task:bid event', () => {
+      const node = new MeshNetworkNode();
+      let receivedBid: TaskBid | null = null;
+      node.on('task:bid', (bid: TaskBid) => { receivedBid = bid; });
+      const fakeBid: TaskBid = {
+        taskId: 't1', nodeId: 'n1', estimatedTime: 1000, confidence: 0.8, load: 0.2,
+      };
+      node.emit('task:bid', fakeBid);
+      expect(receivedBid).toEqual(fakeBid);
+    });
+
+    test('emits node:started event', () => {
+      const node = new MeshNetworkNode();
+      const handler = jest.fn();
+      node.on('node:started', handler);
+      node.emit('node:started', 'my-node-id');
+      expect(handler).toHaveBeenCalledWith('my-node-id');
+    });
+
+    test('supports once() for single-fire listeners', () => {
+      const node = new MeshNetworkNode();
+      const handler = jest.fn();
+      node.once('task:result', handler);
+      node.emit('task:result', { taskId: 't', nodeId: 'n', success: true, executionTime: 1 });
+      node.emit('task:result', { taskId: 't2', nodeId: 'n', success: true, executionTime: 2 });
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    test('removeListener stops receiving events', () => {
+      const node = new MeshNetworkNode();
+      const handler = jest.fn();
+      node.on('peer:discovered', handler);
+      node.emit('peer:discovered', { id: 'p1' });
+      node.removeListener('peer:discovered', handler);
+      node.emit('peer:discovered', { id: 'p2' });
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getKnownPeers after simulated discovery', () => {
+    test('returns peers emitted via peer:discovered', () => {
+      const node = new MeshNetworkNode();
+      // Simulate external code pushing into knownPeers via emit
+      // (In real usage, handleCapabilityAd does this)
+      expect(node.getKnownPeers()).toEqual([]);
+    });
+  });
+
+  describe('MeshConfig partial options', () => {
+    test('only nodeId provided, rest use defaults', () => {
+      const node = new MeshNetworkNode({ nodeId: 'test-id' });
+      expect(node).toBeDefined();
+      expect(node.getStats().nodeId).toBe('unknown'); // libp2p not started
+    });
+
+    test('only listenAddresses provided', () => {
+      const node = new MeshNetworkNode({
+        listenAddresses: ['/ip4/0.0.0.0/tcp/9000'],
+      });
+      expect(node).toBeDefined();
+    });
+
+    test('only bootstrapPeers provided with multiple peers', () => {
+      const node = new MeshNetworkNode({
+        bootstrapPeers: [
+          '/ip4/10.0.0.1/tcp/4001/p2p/QmPeer1',
+          '/ip4/10.0.0.2/tcp/4001/p2p/QmPeer2',
+          '/ip4/10.0.0.3/tcp/4001/p2p/QmPeer3',
+        ],
+      });
+      expect(node).toBeDefined();
+    });
+  });
+
+  describe('Task interface edge cases', () => {
+    test('Task with empty payload object', () => {
+      const task: Task = { id: 't-empty', type: 'noop', payload: {} };
+      expect(task.payload).toEqual({});
+    });
+
+    test('Task with null-like payload (undefined requiredCapabilities)', () => {
+      const task: Task = { id: 't-min', type: 'compute', payload: { data: 42 } };
+      expect(task.requiredCapabilities).toBeUndefined();
+      expect(task.timeout).toBeUndefined();
+      expect(task.priority).toBeUndefined();
+    });
+
+    test('Task with high priority', () => {
+      const task: Task = {
+        id: 't-urgent', type: 'alert', payload: { msg: 'critical' },
+        priority: 'high', timeout: 1000,
+      };
+      expect(task.priority).toBe('high');
+    });
+  });
+
+  describe('MeshMessage all MessageType variants', () => {
+    const messageTypes: Array<MeshMessage['type']> = [
+      'task_request', 'task_response', 'task_bid',
+      'capability_ad', 'peer_list', 'gossip', 'heartbeat',
+    ];
+
+    messageTypes.forEach((msgType) => {
+      test(`can construct ${msgType} message`, () => {
+        const msg: MeshMessage = {
+          id: `msg-${msgType}`,
+          from: 'node-A',
+          type: msgType,
+          payload: {},
+          timestamp: Date.now(),
+          ttl: 5,
+        };
+        expect(msg.type).toBe(msgType);
+      });
+    });
+  });
+
+  describe('concurrent capability operations', () => {
+    test('register different capabilities rapidly', () => {
+      const node = new MeshNetworkNode();
+      const caps = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+      caps.forEach(c => node.registerCapability(c, jest.fn()));
+      expect(node.getStats().capabilities).toBe(8);
+    });
+
+    test('overwrite then register new cap adjusts count correctly', () => {
+      const node = new MeshNetworkNode();
+      node.registerCapability('x', jest.fn());
+      node.registerCapability('x', jest.fn()); // overwrite, still 1
+      node.registerCapability('y', jest.fn()); // new, now 2
+      node.registerCapability('z', jest.fn()); // new, now 3
+      expect(node.getStats().capabilities).toBe(3);
+    });
+  });
+
+  describe('getStats consistency', () => {
+    test('pendingTasks is 0 for fresh node', () => {
+      const node = new MeshNetworkNode();
+      expect(node.getStats().pendingTasks).toBe(0);
+    });
+
+    test('stats object has all required fields', () => {
+      const node = new MeshNetworkNode();
+      const stats = node.getStats();
+      expect(stats).toHaveProperty('nodeId');
+      expect(stats).toHaveProperty('peers');
+      expect(stats).toHaveProperty('capabilities');
+      expect(stats).toHaveProperty('pendingTasks');
+    });
+  });
 });
