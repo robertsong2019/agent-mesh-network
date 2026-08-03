@@ -1,0 +1,2 @@
+timestamp	commit	metric	value	status	description
+2026-08-03T19:00	(e70580f+)	test_count	158→205	keep	Cycle 1: MeshRegistry — peer capability registry with upsert/remove/findPeers/scorePeers/getBestPeer/recordResult. +47 tests. Pure logic, zero networking deps.

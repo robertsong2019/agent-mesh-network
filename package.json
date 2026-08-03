@@ -32,24 +32,24 @@
     "@chainsafe/libp2p-gossipsub": "^7.0.0",
     "@chainsafe/libp2p-noise": "^10.0.0",
     "@chainsafe/libp2p-yamux": "^5.0.0",
-    "@libp2p/kad-dht": "^4.0.0",
     "@libp2p/identify": "^1.0.0",
+    "@libp2p/kad-dht": "^4.0.0",
     "@libp2p/websockets": "^6.0.0",
+    "chalk": "^4.1.2",
     "libp2p": "^1.0.0",
     "multiformats": "^13.0.0",
+    "ora": "^5.4.1",
     "tweetnacl": "^1.0.3",
-    "yargs": "^17.7.2",
-    "chalk": "^4.1.2",
-    "ora": "^5.4.1"
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.0.0",
     "@types/yargs": "^17.0.0",
-    "jest": "^29.5.0",
-    "ts-jest": "^29.1.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.11",
     "ts-node": "^10.9.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18.0.0"
