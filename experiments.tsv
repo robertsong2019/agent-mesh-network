@@ -1,4 +1,1 @@
 timestamp	commit	metric	value	status	description
-2026-08-03T19:00	e268a7c	test_count	158→205	keep	Cycle 1: MeshRegistry — peer capability registry with upsert/remove/findPeers/scorePeers/getBestPeer/recordResult. +47 tests. Pure logic, zero networking deps.
-2026-08-03T19:10	b487586	test_count	205→237	keep	Cycle 2: TaskRouter — bid evaluation, task lifecycle (create→bid→assign→complete/fail), autoAssign, expiry detection. +32 tests.
-2026-08-03T19:20	(draft)	test_count	237→263	keep	Cycle 3: MessageBus — message validation/routing, TTL expiry, priority handlers, validation rules. +26 tests.
