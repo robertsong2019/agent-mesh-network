@@ -8,3 +8,4 @@ export { TaskRouter, Bid, RoutingDecision, TaskLifecycle } from './core/router';
 export { MessageBus, BusMessage, ValidationRule, RoutingEntry } from './core/bus';
 export { CircuitBreaker, CircuitState, CircuitBreakerConfig, DEFAULT_CIRCUIT_CONFIG } from './core/circuit-breaker';
 export { TaskRetry, RetryPolicy, RetryState, RetryDecision, DEFAULT_RETRY_POLICY } from './core/task-retry';
+export { MeshHealthCheck, MeshHealthReport, LayerHealth, HealthThresholds, DEFAULT_THRESHOLDS } from './core/health-check';
